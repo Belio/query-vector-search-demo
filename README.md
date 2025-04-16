@@ -1,6 +1,6 @@
 ## Movie Search using Couchbase Query Service
 
-This is a demo app built to perform hybrid search using the Vector Search capabilities of Couchbase Query & Index Service. The demo allows users to search for movies based on the synopsis or overview of the movie using the [LangChain Query Vector Store integration](https://python.langchain.com/docs/integrations/vectorstores/couchbase/).
+This is a demo app built to perform hybrid search using the Vector Search capabilities of Couchbase Query & Index Service. The demo allows users to search for movies based on the synopsis or overview of the movie using the [LangChain Query Vector Store integration](https://github.com/Couchbase-Ecosystem/langchain-couchbase/tree/query_vector_search).
 
 > Note that you need Couchbase Server 8.0 or higher for Vector Search.
 
