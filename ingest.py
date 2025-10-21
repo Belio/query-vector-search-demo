@@ -4,13 +4,12 @@ from couchbase.cluster import Cluster
 from couchbase.auth import PasswordAuthenticator
 from couchbase.options import ClusterOptions
 
-# from openai import OpenAI
 from datetime import timedelta
 from tqdm import tqdm
 import uuid
 import pandas as pd
 import logging
-from openai import OpenAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 # Load environment variables
 load_dotenv(override=True)
@@ -23,9 +22,9 @@ DB_COLLECTION = os.getenv("DB_COLLECTION")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
 MOVIES_DATASET = "imdb_top_1000.csv"
 
-# Use text-embedding-3-small as the embedding model if not set
+# Use text-embedding-004 as the embedding model if not set
 if not EMBEDDING_MODEL:
-    EMBEDDING_MODEL = "text-embedding-3-small"
+    EMBEDDING_MODEL = "models/text-embedding-004"
 
 
 def check_environment_variable(variable_name):
@@ -37,7 +36,7 @@ def check_environment_variable(variable_name):
 
 
 # Ensure that all environment variables are set
-check_environment_variable("OPENAI_API_KEY")
+check_environment_variable("GOOGLE_API_KEY")
 check_environment_variable("DB_CONN_STR")
 check_environment_variable("DB_USERNAME")
 check_environment_variable("DB_PASSWORD")
@@ -45,7 +44,11 @@ check_environment_variable("DB_BUCKET")
 check_environment_variable("DB_SCOPE")
 check_environment_variable("DB_COLLECTION")
 
-client = OpenAI()
+# Initialize the embeddings model
+embeddings = GoogleGenerativeAIEmbeddings(
+    model=EMBEDDING_MODEL,
+    google_api_key=os.getenv("GOOGLE_API_KEY")
+)
 
 
 def connect_to_couchbase(connection_string, db_username, db_password):
@@ -62,14 +65,9 @@ def connect_to_couchbase(connection_string, db_username, db_password):
     return cluster
 
 
-def generate_embeddings(client, input_data: str):
-    """Generate OpenAI embeddings for the input data"""
-    response = client.embeddings.create(
-        input=input_data,
-        model=EMBEDDING_MODEL,
-        extra_body={"input_type": "query", "truncate": "NONE"},
-    )
-    return response.data[0].embedding
+def generate_embeddings(input_data: str):
+    """Generate embeddings using Google GenAI via LangChain"""
+    return embeddings.embed_query(input_data)
 
 
 try:
@@ -91,7 +89,7 @@ try:
     print("Ingesting Data...")
     for row in tqdm(data_in_dict):
         try:
-            row["Overview_embedding"] = generate_embeddings(client, row["Overview"])
+            row["Overview_embedding"] = generate_embeddings(row["Overview"])
         except Exception as e:
             print(f"Error while generating embeddings for {row['Series_Title']}", e)
             continue

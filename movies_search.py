@@ -6,8 +6,7 @@ import streamlit as st
 from couchbase.auth import PasswordAuthenticator
 from couchbase.cluster import Cluster
 from couchbase.options import ClusterOptions
-from langchain_openai import OpenAIEmbeddings
-from openai import OpenAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 from langchain_couchbase import CouchbaseQueryVectorStore
 from langchain_couchbase.vectorstores import DistanceStrategy
@@ -20,12 +19,6 @@ def check_environment_variable(variable_name):
             f"{variable_name} environment variable is not set. Please add it to the secrets.toml file"  # noqa: E501
         )
         st.stop()
-
-
-def generate_embeddings(client, input_data):
-    """Generate OpenAI embeddings for the input data"""
-    response = client.embeddings.create(input=input_data, model=EMBEDDING_MODEL)
-    return response.data[0].embedding
 
 
 def cleanup_poster_url(poster_url):
@@ -120,15 +113,14 @@ if __name__ == "__main__":
     DB_BUCKET = os.getenv("DB_BUCKET")
     DB_SCOPE = os.getenv("DB_SCOPE")
     DB_COLLECTION = os.getenv("DB_COLLECTION")
-    # INDEX_NAME = os.getenv("INDEX_NAME")
     EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
 
-    # Use text-embedding-3-small as the embedding model if not set
+    # Use text-embedding-004 as the embedding model if not set
     if not EMBEDDING_MODEL:
-        EMBEDDING_MODEL = "text-embedding-3-small"
+        EMBEDDING_MODEL = "models/text-embedding-004"
 
     # Ensure that all environment variables are set
-    check_environment_variable("OPENAI_API_KEY")
+    check_environment_variable("GOOGLE_API_KEY")
     check_environment_variable("DB_CONN_STR")
     check_environment_variable("DB_USERNAME")
     check_environment_variable("DB_PASSWORD")
@@ -139,13 +131,10 @@ if __name__ == "__main__":
     # Initialize empty filters
     search_filters = {}
 
-    # Native OpenAI library for generating embeddings
-    openai_embedding_client = OpenAI(
-        api_key=os.getenv("OPENAI_API_KEY"),
-    )
-
-    embedding = OpenAIEmbeddings(
+    # Initialize Google Gemini embeddings
+    embedding = GoogleGenerativeAIEmbeddings(
         model=EMBEDDING_MODEL,
+        google_api_key=os.getenv("GOOGLE_API_KEY")
     )
 
     # Connect to Couchbase Vector Store
